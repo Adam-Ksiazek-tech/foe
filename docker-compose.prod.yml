@@ -10,7 +10,7 @@ services:
     container_name: foe-app-prod
     restart: unless-stopped
     ports:      
-      - "127.0.0.1:${APP_PORT:-3418}:3000"
+      - "${APP_PORT:-3417}:3000"
     env_file:
       - .env
     environment:
