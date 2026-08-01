@@ -1,4 +1,4 @@
-import type { PokerNkPlayer } from "@/frontend/types/pokerNk";
+import type { PokerNkPlayer } from "@/types/pokerNk";
 
 const DIGIT_LENGTH = 7; // padding width, based on max observed Actions value
 
