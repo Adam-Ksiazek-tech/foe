@@ -29,7 +29,7 @@ export default function Header() {
             children: [
               { key: "/contests/poker-nk", label: <Link href="/contests/poker-nk">Poker NK</Link> },
             ],
-          } as const,
+          },
         ]
       : []),
     {

@@ -7,12 +7,10 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    image: foe-tracker-app:latest
+    image: foe-app:latest
     container_name: foe-app-prod
     restart: unless-stopped
-    ports:
-      # Tylko localhost VPS-a - realny ruch z internetu wchodzi przez
-      # nginx proxy manager (na hoście), NIE bezpośrednio na ten port.
+    ports:      
       - "127.0.0.1:${APP_PORT:-3418}:3000"
     env_file:
       - .env
