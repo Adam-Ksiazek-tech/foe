@@ -1,0 +1,24 @@
+/* Tailwind v4: importujemy tylko theme + utilities, POMIJAJĄC preflight.css.
+   Preflight (reset CSS Tailwinda) koliduje z resetem stylów AntD
+   (np. inaczej zeruje marginesy nagłówków, listy, przyciski) - dwa resety
+   naraz dają nieprzewidywalne efekty. AntD ma własny, spójny reset. */
+@import "tailwindcss/theme.css";
+@import "tailwindcss/utilities.css";
+
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Tailwind v4 domyślnie steruje dark: przez prefers-color-scheme.
+   My chcemy ręczny przełącznik (klasa .dark na <html>), więc nadpisujemy
+   ten wariant. */
+@custom-variant dark (&:where(.dark, .dark *));
