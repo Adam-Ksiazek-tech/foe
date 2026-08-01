@@ -1,39 +1,41 @@
 "use client";
 
-import { useState } from "react";
 import { Layout, Menu, Switch } from "antd";
 import { UserOutlined, LoginOutlined, LogoutOutlined, MoonOutlined, SunOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { useTheme } from "../theme-context";
 
 const { Header: AntHeader } = Layout;
 
 export default function Header() {
   const pathname = usePathname();
-
-  // Tymczasowy stan lokalny - w kroku "Discord login" zastąpimy to
-  // prawdziwą sesją z next-auth (useSession()).
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Tymczasowy lokalny stan dark mode - w kolejnym kroku spinamy
-  // to z AntD ConfigProvider (theme.darkAlgorithm), żeby faktycznie
-  // przełączało kolory całej aplikacji.
-  const [isDark, setIsDark] = useState(false);
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
+  const { isDark, toggleDark } = useTheme();
 
   const items: MenuProps["items"] = [
     { key: "/", label: <Link href="/">Home</Link> },
-    {
-      key: "contests",
-      label: "Konkursy",
-      children: [
-        { key: "/contests/poker-nk", label: <Link href="/contests/poker-nk">Poker NK</Link> },
-      ],
-    },
+    // "Konkursy" widoczne w menu tylko dla zalogowanych - trasa jest
+    // dodatkowo zabezpieczona przez middleware.ts, więc to podwójna warstwa:
+    // UX (nie kuś linkiem, który i tak odbije) + realna ochrona.
+    ...(isLoggedIn
+      ? [
+          {
+            key: "contests",
+            label: "Konkursy",
+            children: [
+              { key: "/contests/poker-nk", label: <Link href="/contests/poker-nk">Poker NK</Link> },
+            ],
+          } as const,
+        ]
+      : []),
     {
       key: "auth",
       icon: <UserOutlined />,
-      label: isLoggedIn ? "Konto" : "Zaloguj",
+      label: isLoggedIn ? session.user?.name ?? "Konto" : "Zaloguj",
       // Menu bez href renderuje się jako rozwijany dropdown zamiast linku
       children: isLoggedIn
         ? [
@@ -41,7 +43,7 @@ export default function Header() {
               key: "logout",
               icon: <LogoutOutlined />,
               label: "Wyloguj",
-              onClick: () => setIsLoggedIn(false),
+              onClick: () => signOut({ callbackUrl: "/" }),
             },
           ]
         : [
@@ -49,7 +51,7 @@ export default function Header() {
               key: "login",
               icon: <LoginOutlined />,
               label: "Zaloguj",
-              onClick: () => setIsLoggedIn(true),
+              onClick: () => signIn("discord", { callbackUrl: "/" }),
             },
           ],
     },
@@ -91,7 +93,7 @@ export default function Header() {
       />
       <Switch
         checked={isDark}
-        onChange={setIsDark}
+        onChange={toggleDark}
         checkedChildren={<MoonOutlined />}
         unCheckedChildren={<SunOutlined />}
         style={{ marginLeft: 16 }}

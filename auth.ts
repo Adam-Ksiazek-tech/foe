@@ -1,9 +1,9 @@
 import NextAuth from "next-auth";
-import Discord from "next-auth/providers/discord";
 import Credentials from "next-auth/providers/credentials";
 import PostgresAdapter from "@auth/pg-adapter";
 import bcrypt from "bcryptjs";
 import { pool } from "@/lib/db";
+import { authConfig } from "@/auth.config";
 
 // Lista e-maili, które WOLNO wpuścić przez logowanie Discord (inaczej każdy
 // posiadacz konta Discord na świecie mógłby się zalogować).
@@ -14,16 +14,14 @@ const allowedEmails = (process.env.ALLOWED_EMAILS ?? "")
   .filter(Boolean);
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   adapter: PostgresAdapter(pool),
   // Credentials provider wymaga sesji JWT (Auth.js nie zapisuje sesji
   // logowania hasłem do bazy przez adapter) - to jest zalecany, bezpieczny
   // wariant, nie obejście.
   session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-  },
   providers: [
-    Discord,
+    ...authConfig.providers,
     Credentials({
       name: "Email i hasło",
       credentials: {

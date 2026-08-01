@@ -7,8 +7,8 @@ const { Title } = Typography;
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-4">
-      <Title level={2}>Foe działa 🎉</Title>
-      <Button type="primary">AntD + Tailwind OK</Button>
+      <Title level={2}>Foe features by Trajan 🎉</Title>
+      {/*<Button type="primary">AntD + Tailwind OK</Button>*/}
     </main>
   );
 }
