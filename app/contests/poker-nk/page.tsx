@@ -1,7 +1,8 @@
 "use client";
 
+import { useExportPokerNk } from "./useExportPokerNk";
 import { useState } from "react";
-import { Upload, Typography, message, Card, Table, Button, Tag, Row, Col, Empty } from "antd";
+import { App, Upload, Typography, Card, Table, Button, Tag, Row, Col, Empty } from "antd";
 import { DownloadOutlined, PlayCircleOutlined } from "@ant-design/icons";
 import type { UploadProps } from "antd";
 
@@ -45,10 +46,7 @@ const HAND_COLOR: Record<PokerHandRank, string> = {
     DwiePary: "geekblue",
 };
 
-/** Builds a short human-readable explanation of why a player landed at this rank. */
 function explainHand(entry: PokerNkEvaluatedPlayer): string {
-    // Zera nie liczą się do układu — pokazujemy tylko cyfry, które realnie
-    // brały udział w ocenie, żeby opis nie sugerował fałszywie, że zera grają.
     const countedDigitsStr = entry.digits.filter((d) => d !== 0).join(" ");
     const hand = entry.hand!;
 
@@ -69,6 +67,9 @@ function explainHand(entry: PokerNkEvaluatedPlayer): string {
 }
 
 export default function GeneratePokerNkByFile() {
+    const { message } = App.useApp();
+    const { exportResults } = useExportPokerNk();
+
     const [fileContent, setFileContent] = useState<string>("");
     const [jsonData, setJsonData] = useState<PokerNkPayload | null>(null);
     const [fileName, setFileName] = useState<string>("file.json");
@@ -158,10 +159,7 @@ export default function GeneratePokerNkByFile() {
         }
     };
 
-    const handleExport = () => {
-        // TODO: docelowo zrzut wyników do pliku .txt lokalnie na komputer
-        message.info("Export not implemented yet");
-    };
+    const handleExport = () => exportResults(results);
 
     const resultColumns = [
         {
@@ -206,7 +204,7 @@ export default function GeneratePokerNkByFile() {
                     </Title>
                 </Col>
                 <Col>
-                    <Button icon={<DownloadOutlined />} onClick={handleExport}>
+                    <Button icon={<DownloadOutlined />} onClick={handleExport} disabled={!results || results.length === 0}>
                         Export to file
                     </Button>
                 </Col>
