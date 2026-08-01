@@ -6,7 +6,7 @@ import { App, Upload, Typography, Card, Table, Button, Tag, Row, Col, Empty } fr
 import { DownloadOutlined, PlayCircleOutlined } from "@ant-design/icons";
 import type { UploadProps } from "antd";
 
-import type { PokerNkPayload, PokerNkPlayer } from "@/frontend/types/pokerNk";
+import type { PokerNkPayload, PokerNkPlayer } from "@/types/pokerNk";
 import {
     evaluatePokerNk,
     type PokerNkEvaluatedPlayer,
