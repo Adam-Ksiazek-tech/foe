@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import { pool } from "@/lib/db";
 import { authConfig } from "@/auth.config";
 
+import { logLoginEvent } from "@/lib/logLoginEvent";
+
 // Lista e-maili, które WOLNO wpuścić przez logowanie Discord (inaczej każdy
 // posiadacz konta Discord na świecie mógłby się zalogować).
 // Ustawiana w .env, np: ALLOWED_EMAILS=ja@example.com,zona@example.com
@@ -36,7 +38,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           [String(credentials.email).toLowerCase()]
         );
         const user = rows[0];
-
+        
         // Konto istnieje, ale nie ma hasła (np. założone tylko przez Discord)
         if (!user?.password_hash) return null;
 
@@ -52,16 +54,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account }) {
-      // Dla logowania przez Discord sprawdzamy allowlistę e-maili.
-      // Logowanie hasłem jest już ograniczone tym, że konto musi istnieć
-      // w naszej bazie z ustawionym password_hash.
-      if (account?.provider === "discord") {
+      
+      await logLoginEvent({
+          app: "foe",
+          email: user.email,
+          name: user.name,
+          provider: account?.provider ?? "unknown",
+          providerAccountId: account?.providerAccountId,
+      });
+      
+      /*if (account?.provider === "discord") {
         const email = user.email?.toLowerCase();
 
         if (!email || !allowedEmails.includes(email)) {
           return false;
         }
-      }
+      }*/
+
       return true;
     },
   },
