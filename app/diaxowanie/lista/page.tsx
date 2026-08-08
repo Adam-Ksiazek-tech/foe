@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Modal, message } from "antd";
 import { PageHeader } from "@/components/PageHeader";
 import { InvestmentsList } from "@/components/InvestmentsList";
 import { useInvestments } from "@/app/hooks/useInvestments";
@@ -9,13 +10,36 @@ import { paginateArray } from "@/helpers/paginationHelpers";
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function DiaxowanieLista() {
-  const { data, loading, error, updateInvestment } = useInvestments();
+  const { data, loading, error, updateInvestment, deleteAllInvestments } = useInvestments();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1);
+  };
+
+  const handleClearTable = () => {
+    Modal.confirm({
+      title: 'Wyczyść tabelę?',
+      content: 'Ta operacja usunie wszystkie inwestycje. Czy na pewno?',
+      okText: 'Tak, wyczyść',
+      cancelText: 'Anuluj',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          setIsDeleting(true);
+          await deleteAllInvestments();
+          setCurrentPage(1);
+          message.success('Tabela wyczyszczona');
+        } catch (err) {
+          message.error('Błąd podczas czyszczenia tabeli');
+        } finally {
+          setIsDeleting(false);
+        }
+      },
+    });
   };
 
   const paginatedData = paginateArray(data, currentPage, pageSize);
@@ -25,6 +49,8 @@ export default function DiaxowanieLista() {
       <PageHeader
         title="Diaxowanie"
         subtitle="Lista wszystkich inwestycji"
+        onClearTable={handleClearTable}
+        isClearing={isDeleting}
       />
 
       <div style={{ flex: 1, overflow: "auto", minHeight: 0, display: "flex", flexDirection: "column" }}>

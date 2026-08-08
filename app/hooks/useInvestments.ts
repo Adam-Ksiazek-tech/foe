@@ -80,9 +80,29 @@ export function useInvestments(): UseInvestmentsReturn {
     }
   }, []);
 
+  const deleteAllInvestments = useCallback(async () => {
+    try {
+      const response = await fetch('/api/investments/proxy', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      setData([]);
+    } catch (err) {
+      console.error('Delete failed:', err);
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  return { data, loading, error, refetch: fetchData, updateInvestment };
+  return { data, loading, error, refetch: fetchData, updateInvestment, deleteAllInvestments };
 }

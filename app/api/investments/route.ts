@@ -1,5 +1,6 @@
 import { parseGameDate } from '@/lib/parseGameDate';
 import { prisma } from '@/lib/prisma';
+import { parseInvestmentAmountAdvanced } from '@/helpers/parseInvestmentAmount';
 import { NextRequest, NextResponse } from 'next/server';
 
 const ALLOWED_ORIGIN = 'https://pl8.forgeofempires.com';
@@ -9,18 +10,6 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
 };
-
-function parseDiaxAmount(text: string): number | null {
-  const match = text.match(/(\d+)\s*\*\s*(\d+)|(\d+)\s*$/);
-
-  if (!match) return null;
-
-  if (match[1] && match[2]) {
-    return parseInt(match[1], 10) * parseInt(match[2], 10);
-  }
-
-  return match[3] ? parseInt(match[3], 10) : null;
-}
 
 // CORS preflight
 export async function OPTIONS() {
@@ -53,6 +42,8 @@ export async function POST(req: NextRequest) {
     beautyDate = new Date();
   }
 
+  const parsedAmount = parseInvestmentAmountAdvanced(body.text);
+
   const record = await prisma.investment.upsert({
     where: {
       msgId: BigInt(body.msgId),
@@ -66,8 +57,8 @@ export async function POST(req: NextRequest) {
       text: body.text,
       gameDate: body.gameDate,
       beautyDate,
-      parsedAmount: parseDiaxAmount(body.text),
-      parsedOk: parseDiaxAmount(body.text) !== null,
+      parsedAmount,
+      parsedOk: parsedAmount !== null,
     },
   });
 
@@ -104,6 +95,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(
     records.map((r) => ({
       ...r,
+      id: r.id.toString(),
       msgId: r.msgId.toString(),
       conversationId: r.conversationId.toString(),
       playerId: r.playerId.toString(),
@@ -142,14 +134,20 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const record = await prisma.investment.update({
-      where: { id },
-      data: { parsedAmount },
+      where: { id: Number(id) },
+      data: { parsedAmount: parsedAmount === null ? null : Number(parsedAmount) },
     });
 
     return NextResponse.json(
       {
         ok: true,
-        data: record,
+        data: {
+          ...record,
+          id: record.id.toString(),
+          msgId: record.msgId.toString(),
+          conversationId: record.conversationId.toString(),
+          playerId: record.playerId.toString(),
+        },
       },
       {
         headers: corsHeaders,
@@ -158,6 +156,42 @@ export async function PATCH(req: NextRequest) {
   } catch (error) {
     return NextResponse.json(
       { ok: false, error: 'Failed to update investment' },
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const apiKey = req.headers.get('x-api-key');
+
+  if (apiKey !== process.env.API_SECRET_KEY_FOR_PLUGIN) {
+    return NextResponse.json(
+      { ok: false, error: 'Unauthorized' },
+      {
+        status: 401,
+        headers: corsHeaders,
+      }
+    );
+  }
+
+  try {
+    const result = await prisma.investment.deleteMany();
+
+    return NextResponse.json(
+      {
+        ok: true,
+        deletedCount: result.count,
+      },
+      {
+        headers: corsHeaders,
+      }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { ok: false, error: 'Failed to delete investments' },
       {
         status: 500,
         headers: corsHeaders,

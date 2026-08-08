@@ -68,3 +68,34 @@ export async function PATCH(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const response = await fetch(
+      `${req.nextUrl.origin}/api/investments`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': API_KEY || '',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { ok: false, error: `API error: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { ok: false, error: 'Failed to delete investments' },
+      { status: 500 }
+    );
+  }
+}
