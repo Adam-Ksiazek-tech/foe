@@ -14,6 +14,7 @@ export default function DiaxowanieLista() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
@@ -42,6 +43,33 @@ export default function DiaxowanieLista() {
     });
   };
 
+  const handleExportRanking = async () => {
+    try {
+      setIsExporting(true);
+      const response = await fetch('/api/investments/export/proxy');
+
+      if (!response.ok) {
+        throw new Error('Błąd podczas eksportu');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'diaxowanie-ranking.txt';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      message.success('Ranking pobrany');
+    } catch (err) {
+      message.error('Błąd podczas pobierania rankingu');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const paginatedData = paginateArray(data, currentPage, pageSize);
 
   return (
@@ -50,7 +78,9 @@ export default function DiaxowanieLista() {
         title="Diaxowanie"
         subtitle="Lista wszystkich inwestycji"
         onClearTable={handleClearTable}
+        onExportRanking={handleExportRanking}
         isClearing={isDeleting}
+        isExporting={isExporting}
       />
 
       <div style={{ flex: 1, overflow: "auto", minHeight: 0, display: "flex", flexDirection: "column" }}>

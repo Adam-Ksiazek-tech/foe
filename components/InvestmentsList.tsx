@@ -148,9 +148,9 @@ export function InvestmentsList({
       width: 150,
     },
     {
-      title: "Data otrzymania",
-      dataIndex: "receivedAt",
-      key: "receivedAt",
+      title: "BeautyDate",
+      dataIndex: "beautyDate",
+      key: "beautyDate",
       width: 180,
       render: (date: string) => new Date(date).toLocaleString("pl-PL"),
     },

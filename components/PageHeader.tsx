@@ -1,15 +1,24 @@
-import { Button } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
+import { Button, Space } from "antd";
+import { DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
 import { useTheme } from "@/app/theme-context";
 
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
   onClearTable?: () => void;
+  onExportRanking?: () => void;
   isClearing?: boolean;
+  isExporting?: boolean;
 }
 
-export function PageHeader({ title, subtitle, onClearTable, isClearing }: PageHeaderProps) {
+export function PageHeader({ 
+  title, 
+  subtitle, 
+  onClearTable, 
+  onExportRanking,
+  isClearing, 
+  isExporting 
+}: PageHeaderProps) {
   const { isDark } = useTheme();
 
   return (
@@ -24,16 +33,28 @@ export function PageHeader({ title, subtitle, onClearTable, isClearing }: PageHe
           </p>
         )}
       </div>
-      {onClearTable && (
-        <Button
-          danger
-          icon={<DeleteOutlined />}
-          onClick={onClearTable}
-          loading={isClearing}
-        >
-          Wyczyść tabelę
-        </Button>
-      )}
+      <Space>
+        {onExportRanking && (
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={onExportRanking}
+            loading={isExporting}
+          >
+            Generuj ranking TXT
+          </Button>
+        )}
+        {onClearTable && (
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={onClearTable}
+            loading={isClearing}
+          >
+            Wyczyść tabelę
+          </Button>
+        )}
+      </Space>
     </div>
   );
 }
