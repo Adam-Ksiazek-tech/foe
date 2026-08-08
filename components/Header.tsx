@@ -6,7 +6,7 @@ import type { MenuProps } from "antd";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useTheme } from "../theme-context";
+import { useTheme } from "../app/theme-context";
 
 const { Header: AntHeader } = Layout;
 
@@ -28,6 +28,13 @@ export default function Header() {
             label: "Konkursy",
             children: [
               { key: "/contests/poker-nk", label: <Link href="/contests/poker-nk">Poker NK</Link> },
+            ],
+          },
+          {
+            key: "diaxowanie",
+            label: "Diaxowanie",
+            children: [
+              { key: "/diaxowanie/lista", label: <Link href="/diaxowanie/lista">Lista</Link> },
             ],
           },
         ]
