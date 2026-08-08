@@ -19,6 +19,7 @@ interface UseInvestmentsReturn {
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
+  updateInvestment: (id: string, parsedAmount: number | null) => Promise<void>;
 }
 
 export function useInvestments(): UseInvestmentsReturn {
@@ -30,11 +31,11 @@ export function useInvestments(): UseInvestmentsReturn {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch('/api/investments/proxy', {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',      
+          'Content-Type': 'application/json',
         },
       });
 
@@ -51,9 +52,37 @@ export function useInvestments(): UseInvestmentsReturn {
     }
   }, []);
 
+  const updateInvestment = useCallback(async (id: string, parsedAmount: number | null) => {
+    try {
+      const response = await fetch('/api/investments/proxy', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, parsedAmount }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Aktualizuj lokalną tablica
+      setData((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, parsedAmount } : item
+        )
+      );
+    } catch (err) {
+      console.error('Update failed:', err);
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  return { data, loading, error, refetch: fetchData };
+  return { data, loading, error, refetch: fetchData, updateInvestment };
 }

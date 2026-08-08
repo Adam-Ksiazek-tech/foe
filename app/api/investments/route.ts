@@ -113,3 +113,55 @@ export async function GET(req: NextRequest) {
     }
   );
 }
+
+export async function PATCH(req: NextRequest) {
+  const apiKey = req.headers.get('x-api-key');
+
+  if (apiKey !== process.env.API_SECRET_KEY_FOR_PLUGIN) {
+    return NextResponse.json(
+      { ok: false, error: 'Unauthorized' },
+      {
+        status: 401,
+        headers: corsHeaders,
+      }
+    );
+  }
+
+  const body = await req.json();
+  const { id, parsedAmount } = body;
+
+  if (!id || parsedAmount === undefined) {
+    return NextResponse.json(
+      { ok: false, error: 'Missing id or parsedAmount' },
+      {
+        status: 400,
+        headers: corsHeaders,
+      }
+    );
+  }
+
+  try {
+    const record = await prisma.investment.update({
+      where: { id },
+      data: { parsedAmount },
+    });
+
+    return NextResponse.json(
+      {
+        ok: true,
+        data: record,
+      },
+      {
+        headers: corsHeaders,
+      }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      { ok: false, error: 'Failed to update investment' },
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
+    );
+  }
+}

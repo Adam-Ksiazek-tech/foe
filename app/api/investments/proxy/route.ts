@@ -34,3 +34,37 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+
+    const response = await fetch(
+      `${req.nextUrl.origin}${INVESTMENTS_API}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': API_KEY || '',
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { ok: false, error: `API error: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { ok: false, error: 'Failed to update investment' },
+      { status: 500 }
+    );
+  }
+}
