@@ -11,6 +11,12 @@ function parseDiaxAmount(text: string): number | null {
 }
 
 export async function POST(req: NextRequest) {
+  const apiKey = req.headers.get('x-api-key');
+  if (apiKey !== process.env.API_SECRET_KEY_FOR_PLUGIN) {
+    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+
   const body = await req.json();
 
   let beautyDate: Date;
@@ -39,7 +45,12 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, id: record.id });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const apiKey = req.headers.get('x-api-key');
+  if (apiKey !== process.env.API_SECRET_KEY_FOR_PLUGIN) {
+    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
   const records = await prisma.investment.findMany({
     orderBy: { receivedAt: 'desc' },
   });
