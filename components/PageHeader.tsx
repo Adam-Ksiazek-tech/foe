@@ -1,5 +1,5 @@
 import { Button, Space } from "antd";
-import { DeleteOutlined, DownloadOutlined } from "@ant-design/icons";
+import { DeleteOutlined } from "@ant-design/icons";
 import { useTheme } from "@/app/theme-context";
 
 interface PageHeaderProps {
@@ -34,16 +34,7 @@ export function PageHeader({
         )}
       </div>
       <Space>
-        {onExportRanking && (
-          <Button
-            type="primary"
-            icon={<DownloadOutlined />}
-            onClick={onExportRanking}
-            loading={isExporting}
-          >
-            Generuj ranking TXT
-          </Button>
-        )}
+        
         {onClearTable && (
           <Button
             danger

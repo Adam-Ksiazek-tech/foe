@@ -3,17 +3,24 @@ import { NextRequest, NextResponse } from 'next/server';
 const API_KEY = process.env.API_SECRET_KEY_FOR_PLUGIN;
 
 export async function GET(req: NextRequest) {
+  const { searchParams } = req.nextUrl;
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
+
   try {
-    const response = await fetch(
-      `${req.nextUrl.origin}/api/investments/export`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'text/plain',
-          'X-API-Key': API_KEY || '',
-        },
-      }
-    );
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const exportUrl = `${req.nextUrl.origin}/api/investments/export?${params.toString()}`;
+
+    const response = await fetch(exportUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'text/plain',
+        'X-API-Key': API_KEY || '',
+      },
+    });
 
     if (!response.ok) {
       return NextResponse.json(
@@ -28,7 +35,7 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="diaxowanie-ranking.txt"',
+        'Content-Disposition': `attachment; filename="diaxowanie-ranking_${startDate}_do_${endDate}.txt"`,
       },
     });
   } catch (error) {

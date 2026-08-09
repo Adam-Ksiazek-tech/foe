@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, message } from "antd";
+import { Modal, message, Input, Button, Space } from "antd";
+import { ReloadOutlined, FileTextOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { InvestmentsList } from "@/components/InvestmentsList";
 import { useInvestments } from "@/app/hooks/useInvestments";
@@ -15,9 +16,42 @@ export default function DiaxowanieLista() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [filteredData, setFilteredData] = useState<typeof data>([]);
+  const [hasFilter, setHasFilter] = useState(false);
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  const handleFilterData = () => {
+    if (!startDate || !endDate) {
+      message.warning('Wybierz datę początkową i końcową');
+      return;
+    }
+
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const filtered = data.filter((inv) => {
+      const invDate = new Date(inv.beautyDate);
+      return invDate >= start && invDate <= end;
+    });
+
+    setFilteredData(filtered);
+    setHasFilter(true);
+    setCurrentPage(1);
+    message.success(`Wyfiltrowano ${filtered.length} inwestycji`);
+  };
+
+  const handleClearFilter = () => {
+    setFilteredData([]);
+    setHasFilter(false);
     setCurrentPage(1);
   };
 
@@ -33,6 +67,7 @@ export default function DiaxowanieLista() {
           setIsDeleting(true);
           await deleteAllInvestments();
           setCurrentPage(1);
+          handleClearFilter();
           message.success('Tabela wyczyszczona');
         } catch (err) {
           message.error('Błąd podczas czyszczenia tabeli');
@@ -44,22 +79,28 @@ export default function DiaxowanieLista() {
   };
 
   const handleExportRanking = async () => {
+    if (!startDate || !endDate) {
+      message.warning('Wybierz datę początkową i końcową');
+      return;
+    }
+
     try {
       setIsExporting(true);
-      const response = await fetch('/api/investments/export/proxy');
+      const url = `/api/investments/export/proxy?startDate=${startDate}&endDate=${endDate}`;
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error('Błąd podczas eksportu');
       }
 
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = 'diaxowanie-ranking.txt';
+      a.href = downloadUrl;
+      a.download = `diaxowanie-ranking_${startDate}_do_${endDate}.txt`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(downloadUrl);
       document.body.removeChild(a);
 
       message.success('Ranking pobrany');
@@ -70,18 +111,67 @@ export default function DiaxowanieLista() {
     }
   };
 
-  const paginatedData = paginateArray(data, currentPage, pageSize);
+  const displayData = hasFilter ? filteredData : data;
+  const paginatedData = paginateArray(displayData, currentPage, pageSize);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "80vh", padding: "24px", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "90vh", padding: "24px", overflow: "hidden" }}>
       <PageHeader
         title="Diaxowanie"
         subtitle="Lista wszystkich inwestycji"
         onClearTable={handleClearTable}
-        onExportRanking={handleExportRanking}
         isClearing={isDeleting}
-        isExporting={isExporting}
       />
+
+      <div style={{ marginBottom: "16px", padding: "12px", backgroundColor: "rgba(0,0,0,0.02)", borderRadius: "4px" }}>
+        <Space direction="vertical" style={{ width: "100%" }}>
+          <div style={{ display: "flex", gap: "16px", alignItems: "flex-end" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: "4px", fontSize: "12px" }}>Od daty:</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={{ width: "150px" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: "4px", fontSize: "12px" }}>Do daty:</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={{ width: "150px" }}
+              />
+            </div>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={handleFilterData}
+            >
+              Odśwież
+            </Button>
+            <Button
+              type="primary"
+              icon={<FileTextOutlined />}
+              onClick={handleExportRanking}
+              loading={isExporting}
+              disabled={!startDate || !endDate}
+            >
+              Generuj ranking TXT
+            </Button>
+            {hasFilter && (
+              <Button onClick={handleClearFilter}>
+                Wyczyść filtr
+              </Button>
+            )}
+          </div>
+          {hasFilter && (
+            <div style={{ fontSize: "12px", color: "rgba(0,0,0,0.65)" }}>
+              Filtr aktywny: {filteredData.length} inwestycji z zakresu {startDate} do {endDate}
+            </div>
+          )}
+        </Space>
+      </div>
 
       <div style={{ flex: 1, overflow: "auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
         <InvestmentsList
@@ -90,7 +180,7 @@ export default function DiaxowanieLista() {
           error={error}
           currentPage={currentPage}
           pageSize={pageSize}
-          totalRecords={data.length}
+          totalRecords={displayData.length}
           onPageChange={(page) => setCurrentPage(page)}
           onPageSizeChange={handlePageSizeChange}
           onUpdateInvestment={updateInvestment}
@@ -102,7 +192,7 @@ export default function DiaxowanieLista() {
         <PaginationControls
           currentPage={currentPage}
           pageSize={pageSize}
-          totalRecords={data.length}
+          totalRecords={displayData.length}
           onPageChange={setCurrentPage}
           onPageSizeChange={handlePageSizeChange}
         />
@@ -126,7 +216,7 @@ function PaginationControls({
   onPageChange,
   onPageSizeChange,
 }: PaginationControlsProps) {
-  const totalPages = Math.ceil(totalRecords / pageSize);
+  const totalPages = Math.ceil(totalRecords / pageSize) || 1;
 
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px" }}>

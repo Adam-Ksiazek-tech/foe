@@ -12,6 +12,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const { searchParams } = req.nextUrl;
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
+
   try {
     const response = await fetch(
       `${req.nextUrl.origin}/api/investments`,
@@ -30,10 +34,23 @@ export async function GET(req: NextRequest) {
 
     const investments = await response.json();
 
+    // Filtruj po zakresie dat
+    let filtered = investments;
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+
+      filtered = investments.filter((inv: any) => {
+        const invDate = new Date(inv.beautyDate);
+        return invDate >= start && invDate <= end;
+      });
+    }
+
     // Zsumuj po graczach
     const ranking: Record<string, number> = {};
 
-    investments.forEach((inv: any) => {
+    filtered.forEach((inv: any) => {
       if (inv.parsedAmount && inv.parsedAmount > 0) {
         if (!ranking[inv.playerName]) {
           ranking[inv.playerName] = 0;
@@ -47,20 +64,22 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b[1] - a[1])
       .map(([name, amount], index) => `${index + 1}. ${name}: ${amount.toLocaleString('pl-PL')}`);
 
+    const dateRange = startDate && endDate ? ` (${startDate} do ${endDate})` : '';
     const txt = [
       '=== RANKING DIAXOWANIA ===',
-      new Date().toLocaleString('pl-PL'),
+      new Date().toLocaleString('pl-PL') + dateRange,
       '',
       ...sorted,
       '',
       `Razem: ${sorted.length} graczy`,
+      `Inwestycji: ${filtered.length}`,
     ].join('\n');
 
     return new NextResponse(txt, {
       status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="diaxowanie-ranking.txt"',
+        'Content-Disposition': `attachment; filename="diaxowanie-ranking_${startDate}_do_${endDate}.txt"`,
       },
     });
   } catch (error) {
