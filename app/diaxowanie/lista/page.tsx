@@ -1,23 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, message, Input, Button, Space } from "antd";
+import { Modal, message, Button, Space, DatePicker } from "antd";
 import { ReloadOutlined, FileTextOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { InvestmentsList } from "@/components/InvestmentsList";
 import { useInvestments } from "@/app/hooks/useInvestments";
 import { paginateArray } from "@/helpers/paginationHelpers";
+import { useTheme } from "@/app/theme-context";
+import dayjs from "dayjs";
 
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function DiaxowanieLista() {
+  const { isDark } = useTheme();
   const { data, loading, error, updateInvestment, deleteAllInvestments } = useInvestments();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
   const [filteredData, setFilteredData] = useState<typeof data>([]);
   const [hasFilter, setHasFilter] = useState(false);
 
@@ -115,7 +118,7 @@ export default function DiaxowanieLista() {
   const paginatedData = paginateArray(displayData, currentPage, pageSize);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "90vh", padding: "24px", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", padding: "24px", overflow: "hidden" }}>
       <PageHeader
         title="Diaxowanie"
         subtitle="Lista wszystkich inwestycji"
@@ -123,25 +126,23 @@ export default function DiaxowanieLista() {
         isClearing={isDeleting}
       />
 
-      <div style={{ marginBottom: "16px", padding: "12px", backgroundColor: "rgba(0,0,0,0.02)", borderRadius: "4px" }}>
+      <div style={{ marginBottom: "16px", padding: "12px", backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)", borderRadius: "4px" }}>
         <Space direction="vertical" style={{ width: "100%" }}>
           <div style={{ display: "flex", gap: "16px", alignItems: "flex-end" }}>
             <div>
-              <label style={{ display: "block", marginBottom: "4px", fontSize: "12px" }}>Od daty:</label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={{ width: "150px" }}
+              <label style={{ display: "block", marginBottom: "4px", fontSize: "12px", color: isDark ? "rgba(255,255,255,0.65)" : "inherit" }}>Od daty:</label>
+              <DatePicker
+                value={startDate ? dayjs(startDate) : null}
+                onChange={(date) => setStartDate(date ? date.format('YYYY-MM-DD') : '')}
+                format="YYYY-MM-DD"
               />
             </div>
             <div>
-              <label style={{ display: "block", marginBottom: "4px", fontSize: "12px" }}>Do daty:</label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={{ width: "150px" }}
+              <label style={{ display: "block", marginBottom: "4px", fontSize: "12px", color: isDark ? "rgba(255,255,255,0.65)" : "inherit" }}>Do daty:</label>
+              <DatePicker
+                value={endDate ? dayjs(endDate) : null}
+                onChange={(date) => setEndDate(date ? date.format('YYYY-MM-DD') : '')}
+                format="YYYY-MM-DD"
               />
             </div>
             <Button
@@ -157,7 +158,7 @@ export default function DiaxowanieLista() {
               loading={isExporting}
               disabled={!startDate || !endDate}
             >
-              Generuj ranking TXT
+              Generuj ranking
             </Button>
             {hasFilter && (
               <Button onClick={handleClearFilter}>
@@ -166,7 +167,7 @@ export default function DiaxowanieLista() {
             )}
           </div>
           {hasFilter && (
-            <div style={{ fontSize: "12px", color: "rgba(0,0,0,0.65)" }}>
+            <div style={{ fontSize: "12px", color: isDark ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.65)" }}>
               Filtr aktywny: {filteredData.length} inwestycji z zakresu {startDate} do {endDate}
             </div>
           )}
