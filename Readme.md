@@ -137,3 +137,8 @@ foe/
 docker compose down -v   # -v usuwa też wolumeny (node_modules, .next)
 docker compose up
 ```
+
+
+##Test Jest
+
+- [Testy Jest](./doc/testsJest.md) - Przewodnik po testach parsera inwestycji

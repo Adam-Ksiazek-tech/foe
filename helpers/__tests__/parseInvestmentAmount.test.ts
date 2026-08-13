@@ -93,4 +93,12 @@ describe('parseInvestmentAmountAdvanced', () => {
     expect(parseInvestmentAmountAdvanced('A190')).toBe(90);
   });
 
+  test('słowo baza i wartość', () => {
+    expect(parseInvestmentAmountAdvanced('baza 625')).toBe(625);
+  });
+
+  test('środek pola i wartość', () => {
+    expect(parseInvestmentAmountAdvanced('X1X 90 + 90')).toBe(180);
+  });
+  
 });
