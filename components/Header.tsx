@@ -35,6 +35,7 @@ export default function Header() {
             label: "Diaxowanie",
             children: [
               { key: "/diaxowanie/lista", label: <Link href="/diaxowanie/lista">Lista</Link> },
+              { key: "/diaxowanie/inwestor", label: <Link href="/diaxowanie/inwestor">Inwestor</Link> },
             ],
           },
         ]
