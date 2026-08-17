@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     // Pobiera dane z wewnętrznego API z kluczem
     const response = await fetch(
-      `${req.nextUrl.origin}${INVESTMENTS_API}`,
+      `http://localhost:3000${INVESTMENTS_API}`,
       {
         method: 'GET',
         headers: {
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
 
     const response = await fetch(
-      `${req.nextUrl.origin}${INVESTMENTS_API}`,
+      `http://localhost:3000${INVESTMENTS_API}`,
       {
         method: 'PATCH',
         headers: {
@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const response = await fetch(
-      `${req.nextUrl.origin}/api/investments`,
+      `http://localhost:3000/api/investments`,
       {
         method: 'DELETE',
         headers: {
