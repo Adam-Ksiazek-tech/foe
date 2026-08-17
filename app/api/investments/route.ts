@@ -92,8 +92,10 @@ export async function GET(req: NextRequest) {
     },
   });
 
+  type InvestmentRecord = typeof records[number];
+
   return NextResponse.json(
-    records.map((r) => {
+    records.map((r: InvestmentRecord) => {
       const transformed = {
         ...r,
         id: r.id.toString(),
