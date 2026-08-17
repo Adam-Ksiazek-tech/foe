@@ -93,13 +93,16 @@ export async function GET(req: NextRequest) {
   });
 
   return NextResponse.json(
-    records.map((r) => ({
-      ...r,
-      id: r.id.toString(),
-      msgId: r.msgId.toString(),
-      conversationId: r.conversationId.toString(),
-      playerId: r.playerId.toString(),
-    })),
+    records.map((r) => {
+      const transformed = {
+        ...r,
+        id: r.id.toString(),
+        msgId: r.msgId.toString(),
+        conversationId: r.conversationId.toString(),
+        playerId: r.playerId.toString(),
+      };
+      return transformed;
+    }),
     {
       headers: corsHeaders,
     }

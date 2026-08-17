@@ -20,6 +20,7 @@ interface UseInvestmentsReturn {
   error: Error | null;
   refetch: () => Promise<void>;
   updateInvestment: (id: string, parsedAmount: number | null) => Promise<void>;
+  deleteAllInvestments: () => Promise<void>;
 }
 
 export function useInvestments(): UseInvestmentsReturn {
