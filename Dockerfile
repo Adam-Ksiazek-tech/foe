@@ -19,7 +19,7 @@ ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN npx prisma generate && npm run build
 
 # ---- 3. Obraz produkcyjny (tylko to, co potrzebne do uruchomienia) ----
 FROM base AS runner
