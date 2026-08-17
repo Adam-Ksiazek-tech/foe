@@ -46,6 +46,14 @@ const HAND_COLOR: Record<PokerHandRank, string> = {
     DwiePary: "geekblue",
 };
 
+const HAND_RANK_ORDER: Record<PokerHandRank, number> = {
+    Kareta: 5,
+    Full: 4,
+    Strit: 3,
+    Trojka: 2,
+    DwiePary: 1,
+};
+
 function explainHand(entry: PokerNkEvaluatedPlayer): string {
     const countedDigitsStr = entry.digits.filter((d) => d !== 0).join(" ");
     const hand = entry.hand!;
@@ -147,19 +155,61 @@ export default function GeneratePokerNkByFile() {
         setProcessing(true);
         try {
             const evaluated = evaluatePokerNk(jsonData);
-            setResults(evaluated);
+            
+            // Sortuj: najpierw po kategorii (malejąco), potem po Progress (malejąco)
+            const sorted = [...evaluated].sort((a, b) => {
+                const rankDiff = HAND_RANK_ORDER[b.hand!.rank] - HAND_RANK_ORDER[a.hand!.rank];
+                if (rankDiff !== 0) return rankDiff;
+                return b.player.Progress - a.player.Progress;
+            });
+            
+            setResults(sorted);
 
-            if (evaluated.length === 0) {
+            if (sorted.length === 0) {
                 message.warning("No player qualified with a hand");
             } else {
-                message.success(`Processed — winner: ${evaluated[0].player.Player}`);
+                message.success(`Processed — winner: ${sorted[0].player.Player}`);
             }
         } finally {
             setProcessing(false);
         }
     };
 
-    const handleExport = () => exportResults(results);
+    const handleExport = () => {
+        if (!results || results.length === 0) return;
+
+        const lines = [
+            `Poker NK — wyniki (${new Date().toLocaleString('pl-PL')})`,
+            "==================================================",
+            "",
+        ];
+
+        results.forEach((entry, idx) => {
+            const rank = HAND_LABEL[entry.hand!.rank];
+            const explanation = explainHand(entry);
+            const actions = entry.player.Actions.toLocaleString("pl-PL");
+            const progress = entry.player.Progress.toLocaleString("pl-PL");
+
+            lines.push(`${idx + 1}. ${entry.player.Player} — ${rank}`);
+            lines.push(`   Actions: ${actions}`);
+            lines.push(`   Progress: ${progress}`);
+            lines.push(`   ${explanation}`);
+            lines.push("");
+        });
+
+        const txt = lines.join("\n");
+        const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `poker-nk-wyniki-${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        message.success("Exported to file");
+    };
 
     const resultColumns = [
         {
@@ -177,6 +227,12 @@ export default function GeneratePokerNkByFile() {
             title: "Actions",
             dataIndex: ["player", "Actions"],
             key: "Actions",
+            render: (val: number) => val.toLocaleString("pl-PL"),
+        },
+        {
+            title: "Progress",
+            dataIndex: ["player", "Progress"],
+            key: "Progress",
             render: (val: number) => val.toLocaleString("pl-PL"),
         },
         {
