@@ -1,7 +1,10 @@
 "use client";
-
+// app/diaxowanie/lista/page.tsx
 import { useState } from "react";
+
 import { Modal, message, Button, Space, DatePicker } from "antd";
+import { App } from 'antd';
+
 import { ReloadOutlined, FileTextOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { InvestmentsList } from "@/components/InvestmentsList";
@@ -9,6 +12,7 @@ import { useInvestments } from "@/app/hooks/useInvestments";
 import { paginateArray } from "@/helpers/paginationHelpers";
 import { useTheme } from "@/app/theme-context";
 import dayjs from "dayjs";
+
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -118,6 +122,7 @@ export default function DiaxowanieLista() {
   const paginatedData = paginateArray(displayData, currentPage, pageSize);
 
   return (
+    <App>
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", padding: "24px", overflow: "hidden" }}>
       <PageHeader
         title="Diaxowanie"
@@ -199,6 +204,7 @@ export default function DiaxowanieLista() {
         />
       </div>
     </div>
+    </App>
   );
 }
 

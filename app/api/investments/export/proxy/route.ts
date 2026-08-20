@@ -1,3 +1,5 @@
+// app/api/investments/export/proxy/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 
 const API_KEY = process.env.API_SECRET_KEY_FOR_PLUGIN;
@@ -12,7 +14,13 @@ export async function GET(req: NextRequest) {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
 
-    const exportUrl = `${req.nextUrl.origin}/api/investments/export?${params.toString()}`;
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    const baseUrl = isProduction 
+      ? `https://${req.headers.get('host')}`
+      : 'http://localhost:3000';
+    
+    const exportUrl = `${baseUrl}/api/investments/export?${params.toString()}`;
 
     const response = await fetch(exportUrl, {
       method: 'GET',
@@ -24,7 +32,7 @@ export async function GET(req: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { ok: false, error: 'Failed to export' },
+        { ok: false, error: `Failed to export: ${response.status}` },
         { status: response.status }
       );
     }
