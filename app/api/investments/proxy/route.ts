@@ -1,100 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const INVESTMENTS_API = '/api/investments'; // Wewnętrzny endpoint
 const API_KEY = process.env.API_SECRET_KEY_FOR_PLUGIN;
 
 export async function GET(req: NextRequest) {
+  const { searchParams } = req.nextUrl;
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
+
   try {
-    // Pobiera dane z wewnętrznego API z kluczem
-    const response = await fetch(
-      `http://localhost:3000${INVESTMENTS_API}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': API_KEY || '',
-        },
-      }
-    );
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    // Użyj req.headers.host zamiast req.nextUrl.origin
+    const host = req.headers.get('host');
+    const protocol = req.headers.get('x-forwarded-proto') || 'https';
+    const baseUrl = `${protocol}://${host}`;
+    
+    const exportUrl = `${baseUrl}/api/investments/export?${params.toString()}`;
+
+    const response = await fetch(exportUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'text/plain',
+        'X-API-Key': API_KEY || '',
+      },
+    });
 
     if (!response.ok) {
       return NextResponse.json(
-        { ok: false, error: `API error: ${response.status}` },
+        { ok: false, error: `Failed to export: ${response.status}` },
         { status: response.status }
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const text = await response.text();
+
+    return new NextResponse(text, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Content-Disposition': `attachment; filename="diaxowanie-ranking_${startDate}_do_${endDate}.txt"`,
+      },
+    });
   } catch (error) {
-    console.error('Proxy error:', error);
+    console.error('Proxy export error:', error);
     return NextResponse.json(
-      { ok: false, error: 'Failed to fetch investments' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PATCH(req: NextRequest) {
-  try {
-    const body = await req.json();
-
-    const response = await fetch(
-      `http://localhost:3000${INVESTMENTS_API}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': API_KEY || '',
-        },
-        body: JSON.stringify(body),
-      }
-    );
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { ok: false, error: `API error: ${response.status}` },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Proxy error:', error);
-    return NextResponse.json(
-      { ok: false, error: 'Failed to update investment' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const response = await fetch(
-      `http://localhost:3000/api/investments`,
-      {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': API_KEY || '',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { ok: false, error: `API error: ${response.status}` },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Proxy error:', error);
-    return NextResponse.json(
-      { ok: false, error: 'Failed to delete investments' },
+      { ok: false, error: 'Failed to export ranking' },
       { status: 500 }
     );
   }
