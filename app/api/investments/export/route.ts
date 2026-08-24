@@ -64,15 +64,21 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b[1] - a[1])
       .map(([name, amount], index) => `${index + 1}. ${name}: ${amount.toLocaleString('pl-PL')}`);
 
-    const dateRange = startDate && endDate ? ` (${startDate} do ${endDate})` : '';
+    const dateRange = startDate && endDate ? `[${startDate} do ${endDate}]` : '';
+
+    const totalKwota = Object.values(ranking).reduce(
+      (sum, amount) => sum + amount,
+      0
+    );
+
     const txt = [
       '=== RANKING DIAXOWANIA ===',
-      new Date().toLocaleString('pl-PL') + dateRange,
+      dateRange,
       '',
       ...sorted,
       '',
-      `Razem: ${sorted.length} graczy`,
-      `Inwestycji: ${filtered.length}`,
+      `Razem: ${sorted.length} graczy`,      
+      `Suma kwota: ${totalKwota.toLocaleString('pl-PL')}`,
     ].join('\n');
 
     return new NextResponse(txt, {
