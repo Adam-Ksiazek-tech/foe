@@ -1,5 +1,7 @@
 "use client";
 
+// app/login/page.tsx
+
 import { signIn } from "next-auth/react";
 import { Button, Card, Typography } from "antd";
 
