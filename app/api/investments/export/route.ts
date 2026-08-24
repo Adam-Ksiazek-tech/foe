@@ -70,7 +70,9 @@ export async function GET(req: NextRequest) {
       (sum, amount) => sum + amount,
       0
     );
-
+    
+    const suggestion = 'Zachęcamy każdego do diaxowania przynajmniej jednego obozu. Każde wsparcie zwiększa siłę i potencjał gildii, a diaxowanie co najmniej jednego obozu stanowi bilet wstępu do konkursu Lucky Diax.';
+    
     const txt = [
       '=== RANKING DIAXOWANIA ===',
       dateRange,
@@ -79,6 +81,8 @@ export async function GET(req: NextRequest) {
       '',
       `Razem: ${sorted.length} graczy`,      
       `Suma kwota: ${totalKwota.toLocaleString('pl-PL')}`,
+      '',
+      `${suggestion}`,
     ].join('\n');
 
     return new NextResponse(txt, {
