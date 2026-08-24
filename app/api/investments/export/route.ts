@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       ...sorted,
       '',
       `Razem: ${sorted.length} graczy`,      
-      `Suma kwota: ${totalKwota.toLocaleString('pl-PL')}`,
+      `Suma: ${totalKwota.toLocaleString('pl-PL')}`,
       '',
       `${suggestion}`,
     ].join('\n');
