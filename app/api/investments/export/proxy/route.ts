@@ -14,11 +14,14 @@ export async function GET(req: NextRequest) {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
 
-    const isProduction = process.env.NODE_ENV === 'production';
-    
+    /*
+    const isProduction = process.env.NODE_ENV === 'production';    
     const baseUrl = isProduction 
       ? `https://${req.headers.get('host')}`
       : 'http://localhost:3000';
+    */
+
+    const baseUrl = 'http://localhost:3000';
     
     const exportUrl = `${baseUrl}/api/investments/export?${params.toString()}`;
 
