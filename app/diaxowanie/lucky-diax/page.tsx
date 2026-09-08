@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Space, Collapse, message } from "antd";
+import { Button, Space, Collapse, message, InputNumber } from "antd";
 import { App } from "antd";
 import { ReloadOutlined, SendOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/PageHeader";
@@ -11,10 +11,10 @@ import { calculateLuckyDiaxWinner, getTodayAsNumber, type Participant } from "@/
 
 // Testowa tablica uczestników
 const TEST_PARTICIPANTS: Participant[] = [
-  { name: "IDudek", points: 720 },
-  { name: "Baracuda", points: 630 },
-  { name: "rba99", points: 555 },
-  { name: "Fabricator", points: 360 },
+  { name: "IDudek1", points: 720 },
+  { name: "Baracuda2", points: 630 },
+  { name: "rba993", points: 555 },
+  { name: "Fabricator4", points: 360 },
   { name: "Kris.74", points: 360 },
   { name: "aatib", points: 360 },
   { name: "Niepokorna Kicia", points: 270 },
@@ -37,6 +37,7 @@ export default function LuckyDiax() {
   const [isSendingToDiscord, setIsSendingToDiscord] = useState(false);
   const [luckyDiaxResult, setLuckyDiaxResult] = useState<string>("");
   const [showLuckyDiaxPreview, setShowLuckyDiaxPreview] = useState(false);
+  const [skipCount, setSkipCount] = useState<number>(3);
 
   // Generuje Lucky Diax i wyświetla preview
   const handleGenerateLuckyDiax = async () => {
@@ -45,9 +46,20 @@ export default function LuckyDiax() {
       // Symulacja opóźnienia
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
+      // Pomijamy pierwszych N uczestników
+      const participantsToUse = TEST_PARTICIPANTS.slice(skipCount);
+
+      if (participantsToUse.length === 0) {
+        message.error("Nie ma wystarczającej liczby uczestników po pominięciu");
+        setIsGenerating(false);
+        return;
+      }
+
+      // console.log("Uczestnicy do użycia:", participantsToUse);
+
       // Obliczenie zwycięzcy
       const today = getTodayAsNumber();
-      const result = calculateLuckyDiaxWinner(TEST_PARTICIPANTS, today);
+      const result = calculateLuckyDiaxWinner(participantsToUse, today);
 
       setLuckyDiaxResult(result);
       setShowLuckyDiaxPreview(true);
@@ -125,6 +137,18 @@ export default function LuckyDiax() {
                 flexWrap: "wrap",
               }}
             >
+              <div>
+                <label style={{ display: "block", marginBottom: "4px", fontSize: "12px", color: isDark ? "rgba(255,255,255,0.65)" : "inherit" }}>
+                  Pomiń pierwszych N uczestników:
+                </label>
+                <InputNumber
+                  min={0}
+                  max={TEST_PARTICIPANTS.length - 1}
+                  value={skipCount}
+                  onChange={(value) => setSkipCount(value || 0)}
+                  style={{ width: "80px" }}
+                />
+              </div>
               <Button
                 type="primary"
                 icon={<ReloadOutlined />}
@@ -141,6 +165,9 @@ export default function LuckyDiax() {
               >
                 Wyślij na Discord
               </Button>
+            </div>
+            <div style={{ fontSize: "12px", color: isDark ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.65)" }}>
+              Liczba uczestników do wyliczenia: {TEST_PARTICIPANTS.length - skipCount}
             </div>
           </Space>
         </div>
