@@ -1,41 +1,47 @@
-"use client";
 // app/diaxowanie/lista/page.tsx
+"use client";
 import { useState } from "react";
 
-import { Modal, message, Button, Space, DatePicker, Collapse, Spin, InputNumber } from "antd";
+import { Modal, message, Button, Space, DatePicker, Collapse } from "antd";
 import { App } from 'antd';
 
 import { ReloadOutlined, FileTextOutlined, SendOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { InvestmentsList } from "@/components/InvestmentsList";
 import { useInvestments } from "@/app/hooks/useInvestments";
+import { useLuckyDiax } from "@/app/hooks/useLuckyDiax";
 import { paginateArray } from "@/helpers/paginationHelpers";
 import { useTheme } from "@/app/theme-context";
-import { calculateLuckyDiaxWinner, getTodayAsNumber, type Participant } from "@/helpers/luckyDiaxHelper";
+import { convertInvestmentsToParticipants } from "@/helpers/investmentHelpers";
 import dayjs from "dayjs";
-
 
 const DEFAULT_PAGE_SIZE = 10;
 
 export default function DiaxowanieLista() {
   const { isDark } = useTheme();
   const { data, loading, error, updateInvestment, deleteAllInvestments } = useInvestments();
+  const {
+    skipCount,
+    setSkipCount,
+    luckyDiaxResult,
+    showLuckyDiaxPreview,
+    setShowLuckyDiaxPreview,
+    isGeneratingLuckyDiax,
+    isSendingToDiscord,
+    generateLuckyDiax,
+    sendToDiscord,
+  } = useLuckyDiax();
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isGeneratingLuckyDiax, setIsGeneratingLuckyDiax] = useState(false);
-  const [isSendingToDiscord, setIsSendingToDiscord] = useState(false);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [filteredData, setFilteredData] = useState<typeof data>([]);
   const [hasFilter, setHasFilter] = useState(false);
   const [rankingPreview, setRankingPreview] = useState<string>('');
   const [showRankingPreview, setShowRankingPreview] = useState(false);
-  const [skipCount, setSkipCount] = useState<number>(3);
-  const [luckyDiaxResult, setLuckyDiaxResult] = useState<string>("");
-  const [showLuckyDiaxPreview, setShowLuckyDiaxPreview] = useState(false);
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
@@ -94,17 +100,6 @@ export default function DiaxowanieLista() {
     });
   };
 
-  // Konwertuje filteredData na Participant[]
-  const convertToParticipants = (): Participant[] => {
-    // console.log("Struktura inv:", filteredData[0]);
-
-    return filteredData.map((inv) => ({      
-      name: inv.playerName, // Dostosuj do pola z nazwą użytkownika
-      points: inv.parsedAmount, // Dostosuj do pola z punktami
-    }));
-  };
-
-  // Pobiera ranking z API i wyświetla preview
   const handleGeneratePreview = async () => {
     if (!startDate || !endDate) {
       message.warning('Wybierz datę początkową i końcową');
@@ -132,71 +127,9 @@ export default function DiaxowanieLista() {
     }
   };
 
-  // Generuje Lucky Diax z filteredData
   const handleGenerateLuckyDiax = async () => {
-    if (!hasFilter || filteredData.length === 0) {
-      message.warning('Najpierw wygeneruj ranking dla wybranego przedziału dat');
-      return;
-    }
-
-    try {
-      setIsGeneratingLuckyDiax(true);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const participants = convertToParticipants();
-      const participantsToUse = participants.slice(skipCount);
-
-      if (participantsToUse.length === 0) {
-        message.error('Nie ma wystarczającej liczby uczestników po pominięciu');
-        setIsGeneratingLuckyDiax(false);
-        return;
-      }
-
-      const today = getTodayAsNumber();
-      const result = calculateLuckyDiaxWinner(participantsToUse, today);
-
-      setLuckyDiaxResult(result);
-      setShowLuckyDiaxPreview(true);
-      message.success('Lucky Diax wygenerowany');
-    } catch (err) {
-      message.error('Błąd podczas generowania Lucky Diax');
-      console.error(err);
-    } finally {
-      setIsGeneratingLuckyDiax(false);
-    }
-  };
-
-  // Wysyła Lucky Diax na Discord
-  const handleSendToDiscord = async () => {
-    if (!luckyDiaxResult) {
-      message.warning('Najpierw wygeneruj Lucky Diax');
-      return;
-    }
-
-    try {
-      setIsSendingToDiscord(true);
-
-      const response = await fetch("/api/discord/send-lucky-diax", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: luckyDiaxResult,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Błąd podczas wysyłania na Discord");
-      }
-
-      message.success("Lucky Diax wysłany na Discord");
-    } catch (err) {
-      message.error("Błąd podczas wysyłania na Discord");
-      console.error(err);
-    } finally {
-      setIsSendingToDiscord(false);
-    }
+    const participants = convertInvestmentsToParticipants(filteredData);
+    await generateLuckyDiax(participants);
   };
 
   const displayData = hasFilter ? filteredData : data;
@@ -204,7 +137,7 @@ export default function DiaxowanieLista() {
 
   return (
     <App>
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", padding: "24px", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", padding: "24px", paddingBottom: "40px", overflow: "auto" }}>
       <PageHeader
         title="Diaxowanie"
         subtitle="Lista wszystkich inwestycji"
@@ -304,13 +237,21 @@ export default function DiaxowanieLista() {
                 <label style={{ display: "block", marginBottom: "4px", fontSize: "12px", color: isDark ? "rgba(255,255,255,0.65)" : "inherit" }}>
                   Pomiń pierwszych N:
                 </label>
-                <InputNumber
-                  min={0}
-                  max={filteredData.length - 1}
+                <select
                   value={skipCount}
-                  onChange={(value) => setSkipCount(value || 0)}
-                  style={{ width: "80px" }}
-                />
+                  onChange={(e) => setSkipCount(Number(e.target.value))}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "4px",
+                    border: "1px solid #d9d9d9",
+                    cursor: "pointer",
+                    width: "80px",
+                  }}
+                >
+                  {Array.from({ length: filteredData.length }, (_, i) => (
+                    <option key={i} value={i}>{i}</option>
+                  ))}
+                </select>
               </div>
               <Button
                 type="primary"
@@ -322,7 +263,7 @@ export default function DiaxowanieLista() {
               </Button>
               <Button
                 icon={<SendOutlined />}
-                onClick={handleSendToDiscord}
+                onClick={sendToDiscord}
                 loading={isSendingToDiscord}
                 disabled={!luckyDiaxResult}
               >
