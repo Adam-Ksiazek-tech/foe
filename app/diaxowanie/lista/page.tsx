@@ -2,10 +2,10 @@
 // app/diaxowanie/lista/page.tsx
 import { useState } from "react";
 
-import { Modal, message, Button, Space, DatePicker } from "antd";
+import { Modal, message, Button, Space, DatePicker, Collapse, Spin } from "antd";
 import { App } from 'antd';
 
-import { ReloadOutlined, FileTextOutlined } from "@ant-design/icons";
+import { ReloadOutlined, FileTextOutlined, DownloadOutlined } from "@ant-design/icons";
 import { PageHeader } from "@/components/PageHeader";
 import { InvestmentsList } from "@/components/InvestmentsList";
 import { useInvestments } from "@/app/hooks/useInvestments";
@@ -23,10 +23,13 @@ export default function DiaxowanieLista() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [filteredData, setFilteredData] = useState<typeof data>([]);
   const [hasFilter, setHasFilter] = useState(false);
+  const [rankingPreview, setRankingPreview] = useState<string>('');
+  const [showRankingPreview, setShowRankingPreview] = useState(false);
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
@@ -85,6 +88,35 @@ export default function DiaxowanieLista() {
     });
   };
 
+  // Pobiera ranking z API i wyświetla preview
+  const handleGeneratePreview = async () => {
+    if (!startDate || !endDate) {
+      message.warning('Wybierz datę początkową i końcową');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      const url = `/api/investments/export/proxy?startDate=${startDate}&endDate=${endDate}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Błąd podczas generowania rankingu');
+      }
+
+      const blob = await response.blob();
+      const text = await blob.text();
+      setRankingPreview(text);
+      setShowRankingPreview(true);
+      message.success('Ranking wygenerowany');
+    } catch (err) {
+      message.error('Błąd podczas generowania rankingu');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Pobiera ranking z API i zapisuje do pliku
   const handleExportRanking = async () => {
     if (!startDate || !endDate) {
       message.warning('Wybierz datę początkową i końcową');
@@ -133,7 +165,7 @@ export default function DiaxowanieLista() {
 
       <div style={{ marginBottom: "16px", padding: "12px", backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)", borderRadius: "4px" }}>
         <Space direction="vertical" style={{ width: "100%" }}>
-          <div style={{ display: "flex", gap: "16px", alignItems: "flex-end" }}>
+          <div style={{ display: "flex", gap: "16px", alignItems: "flex-end", flexWrap: "wrap" }}>
             <div>
               <label style={{ display: "block", marginBottom: "4px", fontSize: "12px", color: isDark ? "rgba(255,255,255,0.65)" : "inherit" }}>Od daty:</label>
               <DatePicker
@@ -159,11 +191,19 @@ export default function DiaxowanieLista() {
             <Button
               type="primary"
               icon={<FileTextOutlined />}
+              onClick={handleGeneratePreview}
+              loading={isGenerating}
+              disabled={!startDate || !endDate}
+            >
+              Generuj ranking
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
               onClick={handleExportRanking}
               loading={isExporting}
               disabled={!startDate || !endDate}
             >
-              Generuj ranking
+              Pobierz
             </Button>
             {hasFilter && (
               <Button onClick={handleClearFilter}>
@@ -178,6 +218,41 @@ export default function DiaxowanieLista() {
           )}
         </Space>
       </div>
+
+      {/* Ranking Preview Collapse */}
+      {rankingPreview && (
+        <div style={{ marginBottom: "16px" }}>
+          <Collapse
+            items={[
+              {
+                key: '1',
+                label: `Podgląd rankingu (${startDate} - ${endDate})`,
+                children: (
+                  <div
+                    style={{
+                      backgroundColor: isDark ? "rgba(0,0,0,0.45)" : "rgba(0,0,0,0.02)",
+                      padding: "12px",
+                      borderRadius: "4px",
+                      fontFamily: "monospace",
+                      fontSize: "12px",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                      maxHeight: "400px",
+                      overflow: "auto",
+                      color: isDark ? "rgba(255,255,255,0.85)" : "inherit",
+                      lineHeight: "1.6",
+                    }}
+                  >
+                    {rankingPreview}
+                  </div>
+                ),
+              },
+            ]}
+            activeKey={showRankingPreview ? ['1'] : []}
+            onChange={(keys) => setShowRankingPreview(keys.includes('1'))}
+          />
+        </div>
+      )}
 
       <div style={{ flex: 1, overflow: "auto", minHeight: 0, display: "flex", flexDirection: "column" }}>
         <InvestmentsList
